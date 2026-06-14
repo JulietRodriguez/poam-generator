@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "poam-generator"
-version = "0.3.0"
+version = "0.4.0"
 description = "CLI tool for generating FedRAMP/FISMA Plan of Action & Milestones (POAM) documents"
 requires-python = ">=3.10"
 dependencies = [
@@ -12,6 +12,8 @@ dependencies = [
     "rich>=13.0",
     "openpyxl>=3.1",
     "boto3>=1.26",
+    "streamlit>=1.28",
+    "pandas>=2.0",
 ]
 
 [project.scripts]

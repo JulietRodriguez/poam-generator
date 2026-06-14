@@ -74,7 +74,7 @@ def _build_table(findings: list[Finding]) -> Table:
 
 
 @click.group()
-@click.version_option("0.3.0", prog_name="poam")
+@click.version_option("0.4.0", prog_name="poam")
 def cli():
     """POAM Generator — create FedRAMP/FISMA Plan of Action & Milestones documents."""
 
@@ -222,6 +222,24 @@ def sync(source: str, region: str, output_file: str, mock: bool):
         f"[dim]Run [bold]poam generate -i {output_path} -o poam.xlsx --format excel[/bold] to produce your POAM[/dim]"
     )
     _print_summary(findings)
+
+
+@cli.command()
+@click.option("--port", default=8501, show_default=True, help="Port to run dashboard on")
+def dashboard(port: int):
+    """Launch the Streamlit web dashboard."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    dashboard_path = Path(__file__).parent / "dashboard.py"
+    console.print(f"[bold green]Launching POAM dashboard on http://localhost:{port}[/bold green]")
+    console.print("[dim]Press Ctrl+C to stop[/dim]\n")
+    subprocess.run([
+        sys.executable, "-m", "streamlit", "run", str(dashboard_path),
+        "--server.port", str(port),
+        "--server.headless", "false",
+    ])
 
 
 def _print_summary(findings: list[Finding]) -> None:

@@ -87,6 +87,21 @@ poam validate -i findings.json
 Valid severities: `Critical`, `High`, `Medium`, `Low`  
 Valid statuses: `Open`, `In Progress`, `Closed`, `Risk Accepted`
 
+## Web Dashboard
+
+Launch a browser-based dashboard to upload findings, view color-coded POAM tables, and download outputs:
+
+```bash
+poam dashboard
+```
+
+Opens at `http://localhost:8501`. Features:
+
+- **Upload Findings** — drag-and-drop a JSON findings file, view color-coded POAM table, download CSV / Excel / JSON
+- **AWS Security Hub** — enter your region, click Sync, view live findings instantly
+- **Metrics panel** — total findings, critical count, open count, in-progress count
+- **Severity bar chart** — visual breakdown of findings by risk level
+
 ## AWS Security Hub Integration
 
 Pull live findings directly from AWS Security Hub and automatically map them to a POAM-ready JSON file.
