@@ -11,9 +11,15 @@ A CLI tool for generating FedRAMP/FISMA **Plan of Action & Milestones (POAM)** d
 - **Summary report** — per-severity and per-status counts printed after every run
 - **NIST 800-53 / FedRAMP aligned** — fields match standard POAM column requirements
 
-## Demo
+## Screenshots
 
-![POAM Generator demo — color-coded findings table with severity summary](screenshot.png)
+### CLI Demo
+
+![CLI Demo](screenshot.png)
+
+### Web Dashboard
+
+![Dashboard](dashboard_screenshot.png)
 
 ## Installation
 
