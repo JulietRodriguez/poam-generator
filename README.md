@@ -87,9 +87,36 @@ poam validate -i findings.json
 Valid severities: `Critical`, `High`, `Medium`, `Low`  
 Valid statuses: `Open`, `In Progress`, `Closed`, `Risk Accepted`
 
+## AWS Security Hub Integration
+
+Pull live findings directly from AWS Security Hub and automatically map them to a POAM-ready JSON file.
+
+### Test with mock data (no AWS credentials needed)
+
+```bash
+poam sync --source aws-security-hub --region us-east-1 --mock
+```
+
+### Sync real findings from your AWS account
+
+```bash
+poam sync --source aws-security-hub --region us-east-1 --output findings.json
+```
+
+Then generate your POAM from the synced findings:
+
+```bash
+poam generate -i findings.json -o poam.xlsx --format excel
+```
+
+AWS credentials must be configured via `aws configure` or environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`).
+
+The sync command pulls findings filtered to `RecordState=ACTIVE` and `WorkflowStatus=NEW or NOTIFIED`, and maps Security Hub fields to all standard POAM columns automatically.
+
 ## Requirements
 
 - Python 3.10+
 - `click >= 8.1`
 - `rich >= 13.0`
 - `openpyxl >= 3.1`
+- `boto3 >= 1.26` (for AWS Security Hub integration)
