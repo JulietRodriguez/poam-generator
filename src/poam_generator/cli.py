@@ -1,4 +1,4 @@
-"""POAM Generator CLI — poam demo | generate | validate."""
+"""POAM Generator CLI — poam demo | generate | validate | sync."""
 
 import json
 import sys
@@ -14,6 +14,7 @@ from .generate import write_csv, write_excel
 from .oscal import write_oscal_json, write_oscal_xml
 from .models import Finding, SEVERITY_ORDER
 from .validate import validate_findings
+from .aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
 
 console = Console()
 
@@ -73,7 +74,7 @@ def _build_table(findings: list[Finding]) -> Table:
 
 
 @click.group()
-@click.version_option("0.2.0", prog_name="poam")
+@click.version_option("0.3.0", prog_name="poam")
 def cli():
     """POAM Generator — create FedRAMP/FISMA Plan of Action & Milestones documents."""
 
@@ -178,6 +179,49 @@ def validate(input_file: str):
         console.print(
             f"[bold green]OK All {len(raw)} finding(s) in '{input_file}' are valid.[/bold green]"
         )
+
+
+@cli.command()
+@click.option(
+    "--source", required=True,
+    type=click.Choice(["aws-security-hub"], case_sensitive=False),
+    help="Data source to sync from",
+)
+@click.option("--region", default="us-east-1", show_default=True, help="AWS region")
+@click.option("-o", "--output", "output_file", default="findings.json", show_default=True, help="Output JSON file")
+@click.option("--mock", is_flag=True, help="Use built-in mock findings (no AWS credentials needed)")
+def sync(source: str, region: str, output_file: str, mock: bool):
+    """Pull findings from AWS Security Hub and save to a JSON file."""
+    if mock:
+        console.print("[bold yellow]-- MOCK MODE -- Using built-in AWS Security Hub demo findings[/bold yellow]\n")
+        raw_findings = MOCK_FINDINGS
+    else:
+        console.print(f"[cyan]Connecting to AWS Security Hub in [bold]{region}[/bold]...[/cyan]")
+        try:
+            raw_findings = fetch_security_hub_findings(region)
+        except RuntimeError as e:
+            console.print(f"[bold red]Error:[/bold red] {e}")
+            sys.exit(1)
+        except Exception as e:
+            console.print(f"[bold red]AWS Error:[/bold red] {e}")
+            console.print("[dim]Ensure AWS credentials are configured: aws configure[/dim]")
+            sys.exit(1)
+
+    findings = [Finding.from_dict(d) for d in raw_findings]
+
+    output_path = Path(output_file)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(raw_findings, f, indent=2)
+
+    table = _build_table(findings)
+    console.print()
+    console.print(table)
+    console.print()
+    console.print(f"[bold green]Synced {len(findings)} findings ->[/bold green] [cyan]{output_path}[/cyan]")
+    console.print(
+        f"[dim]Run [bold]poam generate -i {output_path} -o poam.xlsx --format excel[/bold] to produce your POAM[/dim]"
+    )
+    _print_summary(findings)
 
 
 def _print_summary(findings: list[Finding]) -> None:
