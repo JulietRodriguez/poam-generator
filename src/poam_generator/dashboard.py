@@ -9,10 +9,16 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from .aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
-from .generate import write_csv, write_excel
-from .models import Finding
-from .validate import validate_findings
+try:
+    from .aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
+    from .generate import write_csv, write_excel
+    from .models import Finding
+    from .validate import validate_findings
+except ImportError:
+    from poam_generator.aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
+    from poam_generator.generate import write_csv, write_excel
+    from poam_generator.models import Finding
+    from poam_generator.validate import validate_findings
 
 SEVERITY_COLORS = {
     "Critical": "#FF4B4B",
