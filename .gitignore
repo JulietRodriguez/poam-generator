@@ -7,3 +7,5 @@ build/
 *.xlsx
 *.json
 *.xml
+_demo_output.html
+_demo_output.svg
