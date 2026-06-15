@@ -78,7 +78,7 @@ def _build_table(findings: list[Finding]) -> Table:
 
 
 @click.group()
-@click.version_option("0.5.0", prog_name="poam")
+@click.version_option("0.6.0", prog_name="poam")
 def cli():
     """POAM Generator — create FedRAMP/FISMA Plan of Action & Milestones documents."""
 

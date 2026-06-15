@@ -300,7 +300,7 @@ def main() -> None:
 
     st.sidebar.markdown("---")
     st.sidebar.markdown(
-        "**poam-generator** v0.5.0  \n"
+        "**poam-generator** v0.6.0  \n"
         "[GitHub](https://github.com/JulietRodriguez/poam-generator)"
     )
 
