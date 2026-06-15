@@ -114,10 +114,10 @@ Launch a browser-based dashboard to upload findings, view color-coded POAM table
 poam dashboard
 ```
 
-Opens at `http://localhost:8501`. Features:
+Opens at `http://localhost:8501` and loads straight to a live view of findings from AWS Security Hub with no setup required. Features:
 
-- **Upload Findings** — drag-and-drop a JSON findings file, view color-coded POAM table, download CSV / Excel / JSON
-- **AWS Security Hub** — enter your region, click Sync, view live findings instantly
+- **AWS Security Hub** — opens automatically with findings loaded, no clicks needed. Connect real AWS credentials to sync live findings
+- **Upload Findings** — drag-and-drop a JSON findings file for offline use
 - **Remediation Tracker** — timeline of findings by due date (🔴 overdue, 🟡 due this week, 🟢 on track), inline status update form, full status change history
 - **Metrics panel** — total findings, critical count, open count, in-progress count
 - **Severity bar chart** — visual breakdown of findings by risk level
