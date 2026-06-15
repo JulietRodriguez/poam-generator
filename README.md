@@ -26,13 +26,7 @@ A CLI tool for generating FedRAMP/FISMA **Plan of Action & Milestones (POAM)** d
 ## Installation
 
 ```bash
-pip install poam-generator
-```
-
-Or install from source:
-
-```bash
-git clone https://github.com/julietrod/poam-generator.git
+git clone https://github.com/JulietRodriguez/poam-generator.git
 cd poam-generator
 pip install -e .
 ```
@@ -161,3 +155,11 @@ The sync command pulls findings filtered to `RecordState=ACTIVE` and `WorkflowSt
 - `rich >= 13.0`
 - `openpyxl >= 3.1`
 - `boto3 >= 1.26` (for AWS Security Hub integration)
+
+## Contributing
+
+Pull requests welcome. For major changes open an issue first to discuss what you'd like to change.
+
+## License
+
+MIT — open source, free to use and modify.
