@@ -15,6 +15,10 @@ from .oscal import write_oscal_json, write_oscal_xml
 from .models import Finding, SEVERITY_ORDER
 from .validate import validate_findings
 from .aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
+from .tracker import (
+    init_db, save_findings, update_status, get_all_findings,
+    get_overdue_findings, get_due_this_week, get_status_history, days_remaining,
+)
 
 console = Console()
 
@@ -74,7 +78,7 @@ def _build_table(findings: list[Finding]) -> Table:
 
 
 @click.group()
-@click.version_option("0.4.0", prog_name="poam")
+@click.version_option("0.5.0", prog_name="poam")
 def cli():
     """POAM Generator — create FedRAMP/FISMA Plan of Action & Milestones documents."""
 
@@ -222,6 +226,171 @@ def sync(source: str, region: str, output_file: str, mock: bool):
         f"[dim]Run [bold]poam generate -i {output_path} -o poam.xlsx --format excel[/bold] to produce your POAM[/dim]"
     )
     _print_summary(findings)
+
+
+@cli.command()
+@click.option("-i", "--input", "input_file", required=True, type=click.Path(exists=True), help="JSON findings file")
+@click.option("--db", "db_path", default="poam_tracker.db", show_default=True, help="SQLite database path")
+def track(input_file: str, db_path: str):
+    """Save findings to the tracker database and show what changed since last run."""
+    from pathlib import Path as _Path
+
+    try:
+        with open(input_file, encoding="utf-8") as f:
+            raw = json.load(f)
+    except json.JSONDecodeError as e:
+        console.print(f"[bold red]Error:[/bold red] Invalid JSON: {e}")
+        sys.exit(1)
+
+    if isinstance(raw, dict) and "findings" in raw:
+        raw = raw["findings"]
+
+    # Build items list with generated IDs
+    items = []
+    for i, d in enumerate(raw, start=1):
+        items.append({
+            "item_id": f"V-{i:03d}",
+            "weakness_name": d.get("weakness_name", ""),
+            "security_control": d.get("security_control", ""),
+            "severity": d.get("severity", ""),
+            "status": d.get("status", ""),
+            "detection_date": d.get("detection_date", ""),
+            "scheduled_completion": d.get("scheduled_completion", ""),
+            "office_org": d.get("office_org", ""),
+            "point_of_contact": d.get("point_of_contact", ""),
+        })
+
+    db = _Path(db_path)
+    changes = save_findings(items, db_path=db)
+
+    console.print(f"\n[bold cyan]POAM Tracker[/bold cyan] — database: [dim]{db}[/dim]")
+    console.print(f"[green]✓[/green] Processed [bold]{len(items)}[/bold] findings\n")
+
+    if not changes:
+        console.print("[dim]No changes since last run.[/dim]")
+    else:
+        from rich.table import Table as _Table
+        t = _Table(title="Changes Since Last Run", box=box.SIMPLE_HEAVY, show_header=True,
+                   header_style="bold white on dark_blue")
+        t.add_column("Item ID", width=8)
+        t.add_column("Type", width=14)
+        t.add_column("Detail")
+        for c in changes:
+            if c["type"] == "new":
+                t.add_row(c["item_id"], "[green]New finding[/green]", c["value"])
+            else:
+                t.add_row(
+                    c["item_id"], "[yellow]Status changed[/yellow]",
+                    f"{c['old']} → [bold]{c['new']}[/bold]"
+                )
+        console.print(t)
+
+    console.print()
+
+
+@cli.command("status")
+@click.option("--db", "db_path", default="poam_tracker.db", show_default=True, help="SQLite database path")
+def status_cmd(db_path: str):
+    """Show a terminal dashboard: overdue items, due this week, and all open findings."""
+    from pathlib import Path as _Path
+    from rich.table import Table as _Table
+    from rich.panel import Panel as _Panel
+
+    db = _Path(db_path)
+    if not db.exists():
+        console.print("[yellow]No tracker database found. Run [bold]poam track[/bold] first.[/yellow]")
+        sys.exit(1)
+
+    overdue = get_overdue_findings(db_path=db)
+    due_week = get_due_this_week(db_path=db)
+    all_findings = get_all_findings(db_path=db)
+    open_findings = [f for f in all_findings if f["status"] not in ("Closed", "Risk Accepted")]
+
+    console.print()
+
+    # Metrics row
+    total = len(all_findings)
+    n_overdue = len(overdue)
+    n_week = len(due_week)
+    n_open = len(open_findings)
+    console.print(
+        f"  [bold]Total:[/bold] {total}   "
+        f"[bold red]Overdue:[/bold red] {n_overdue}   "
+        f"[bold yellow]Due This Week:[/bold yellow] {n_week}   "
+        f"[bold cyan]Open:[/bold cyan] {n_open}\n"
+    )
+
+    if overdue:
+        t = _Table(title="[bold red]⚠ Overdue Findings[/bold red]", box=box.ROUNDED,
+                   show_lines=True, header_style="bold white on red")
+        t.add_column("ID", width=7)
+        t.add_column("Weakness", min_width=28)
+        t.add_column("Severity", width=10)
+        t.add_column("Due Date", width=12)
+        t.add_column("Days Overdue", width=13, justify="right")
+        t.add_column("Status", width=13)
+        for f in overdue:
+            days = abs(days_remaining(f["scheduled_completion"]))
+            sev_s = SEVERITY_STYLES.get(f["severity"], "")
+            t.add_row(
+                f["item_id"], f["weakness_name"],
+                f"[{sev_s}]{f['severity']}[/{sev_s}]",
+                f["scheduled_completion"],
+                f"[bold red]{days}[/bold red]",
+                f"[red]{f['status']}[/red]",
+            )
+        console.print(t)
+        console.print()
+
+    if due_week:
+        t = _Table(title="[bold yellow]Due This Week[/bold yellow]", box=box.ROUNDED,
+                   show_lines=True, header_style="bold white on dark_orange")
+        t.add_column("ID", width=7)
+        t.add_column("Weakness", min_width=28)
+        t.add_column("Severity", width=10)
+        t.add_column("Due Date", width=12)
+        t.add_column("Days Left", width=10, justify="right")
+        t.add_column("Status", width=13)
+        for f in due_week:
+            days = days_remaining(f["scheduled_completion"])
+            sev_s = SEVERITY_STYLES.get(f["severity"], "")
+            t.add_row(
+                f["item_id"], f["weakness_name"],
+                f"[{sev_s}]{f['severity']}[/{sev_s}]",
+                f["scheduled_completion"],
+                f"[yellow]{days}[/yellow]",
+                f["status"],
+            )
+        console.print(t)
+        console.print()
+
+    if open_findings:
+        t = _Table(title="[bold cyan]All Open Findings[/bold cyan]", box=box.ROUNDED,
+                   show_lines=True, header_style="bold white on dark_blue", expand=True)
+        t.add_column("ID", width=7)
+        t.add_column("Weakness", min_width=24)
+        t.add_column("Control", width=9)
+        t.add_column("Severity", width=10)
+        t.add_column("Status", width=13)
+        t.add_column("Due Date", width=12)
+        t.add_column("Days Left", width=10, justify="right")
+        for f in open_findings:
+            days = days_remaining(f["scheduled_completion"])
+            sev_s = SEVERITY_STYLES.get(f["severity"], "")
+            sta_s = STATUS_STYLES.get(f["status"], "")
+            days_str = (
+                f"[bold red]{days}[/bold red]" if days < 0
+                else f"[yellow]{days}[/yellow]" if days <= 7
+                else str(days)
+            )
+            t.add_row(
+                f["item_id"], f["weakness_name"], f["security_control"],
+                f"[{sev_s}]{f['severity']}[/{sev_s}]",
+                f"[{sta_s}]{f['status']}[/{sta_s}]",
+                f["scheduled_completion"], days_str,
+            )
+        console.print(t)
+        console.print()
 
 
 @cli.command()

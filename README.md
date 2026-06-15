@@ -93,6 +93,23 @@ poam validate -i findings.json
 Valid severities: `Critical`, `High`, `Medium`, `Low`  
 Valid statuses: `Open`, `In Progress`, `Closed`, `Risk Accepted`
 
+## Remediation Tracking
+
+Load findings into the local SQLite tracker and monitor remediation progress:
+
+```bash
+# Import findings into the tracker
+poam track -i findings.json
+
+# Show overdue, due-this-week, and all open findings
+poam status
+
+# Update a finding's status with notes
+poam status --update POAM-001 --set-status "In Progress" --notes "Patch applied"
+```
+
+The tracker stores all status changes with timestamps so you have a full audit trail.
+
 ## Web Dashboard
 
 Launch a browser-based dashboard to upload findings, view color-coded POAM tables, and download outputs:
@@ -105,6 +122,7 @@ Opens at `http://localhost:8501`. Features:
 
 - **Upload Findings** — drag-and-drop a JSON findings file, view color-coded POAM table, download CSV / Excel / JSON
 - **AWS Security Hub** — enter your region, click Sync, view live findings instantly
+- **Remediation Tracker** — timeline of findings by due date (🔴 overdue, 🟡 due this week, 🟢 on track), inline status update form, full status change history
 - **Metrics panel** — total findings, critical count, open count, in-progress count
 - **Severity bar chart** — visual breakdown of findings by risk level
 
