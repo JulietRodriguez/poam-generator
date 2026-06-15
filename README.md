@@ -2,6 +2,8 @@
 
 A CLI tool for generating FedRAMP/FISMA **Plan of Action & Milestones (POAM)** documents from structured JSON findings.
 
+🔗 **[Live Demo](https://poam-generator-cappnr854zntygjkdtqxzbs.streamlit.app)** | **[GitHub](https://github.com/JulietRodriguez/poam-generator)**
+
 ## Features
 
 - **Color-coded terminal table** — findings sorted by severity (Critical → Low) with rich formatting
