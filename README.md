@@ -17,7 +17,7 @@ A CLI tool for generating FedRAMP/FISMA **Plan of Action & Milestones (POAM)** d
 
 ### CLI Demo
 
-![CLI Demo](screenshot.png)
+![CLI Demo](CLIdemo.png)
 
 ### Web Dashboard
 
