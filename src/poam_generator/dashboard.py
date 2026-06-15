@@ -296,6 +296,7 @@ def main() -> None:
         "Data Source",
         ["AWS Security Hub", "Upload Findings", "Remediation Tracker"],
         index=0,
+        key="data_source",
     )
 
     st.sidebar.markdown("---")
