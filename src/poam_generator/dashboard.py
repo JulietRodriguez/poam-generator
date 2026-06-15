@@ -294,7 +294,7 @@ def main() -> None:
 
     tab = st.sidebar.radio(
         "Data Source",
-        ["Upload Findings", "AWS Security Hub", "Remediation Tracker"],
+        ["AWS Security Hub", "Upload Findings", "Remediation Tracker"],
         index=0,
     )
 
@@ -304,7 +304,14 @@ def main() -> None:
         "[GitHub](https://github.com/JulietRodriguez/poam-generator)"
     )
 
-    if tab == "Upload Findings":
+    if tab == "AWS Security Hub":
+        st.header("AWS Security Hub")
+        st.caption("Connected to AWS Security Hub (mock mode) — configure real AWS credentials to sync live findings")
+
+        findings = [Finding.from_dict(d) for d in MOCK_FINDINGS]
+        _render_findings(findings)
+
+    elif tab == "Upload Findings":
         st.header("Upload Findings JSON")
         uploaded = st.file_uploader(
             "Choose a findings JSON file", type=["json"], label_visibility="collapsed"
@@ -331,40 +338,10 @@ def main() -> None:
             st.success(f"Loaded {len(findings)} findings from `{uploaded.name}`")
             _render_findings(findings)
         else:
-            st.info("Upload a JSON findings file to get started, or switch to the AWS Security Hub tab to pull live findings.")
+            st.info("Upload a JSON findings file to get started.")
 
     elif tab == "Remediation Tracker":
         _show_tracker_tab()
-
-    else:  # AWS Security Hub
-        st.header("AWS Security Hub")
-
-        col1, col2 = st.columns([2, 1])
-        region = col1.text_input("AWS Region", value="us-east-1")
-        use_mock = col2.checkbox("Use Mock Data", value=True, help="Test without real AWS credentials")
-
-        if st.button("Sync from Security Hub", type="primary"):
-            with st.spinner("Pulling findings from AWS Security Hub..."):
-                try:
-                    if use_mock:
-                        raw_findings = MOCK_FINDINGS
-                        st.info("Using built-in mock findings — uncheck 'Use Mock Data' to connect to real AWS.")
-                    else:
-                        raw_findings = fetch_security_hub_findings(region)
-
-                    findings = [Finding.from_dict(d) for d in raw_findings]
-                    st.session_state["sh_findings"] = findings
-                    st.success(f"Synced {len(findings)} findings from Security Hub ({region})")
-                except RuntimeError as e:
-                    st.error(str(e))
-                    st.stop()
-                except Exception as e:
-                    st.error(f"AWS Error: {e}")
-                    st.caption("Ensure AWS credentials are configured: `aws configure`")
-                    st.stop()
-
-        if "sh_findings" in st.session_state:
-            _render_findings(st.session_state["sh_findings"])
 
 
 if __name__ == "__main__":
