@@ -1,0 +1,62 @@
+[
+  {
+    "weakness_name": "Multi-Factor Authentication Not Enforced for Privileged Accounts",
+    "weakness_description": "Administrative accounts do not require MFA, allowing single-factor authentication to access critical systems. This violates NIST SP 800-63B requirements and increases the risk of credential-based attacks.",
+    "security_control": "IA-5",
+    "severity": "Critical",
+    "source": "Penetration Test",
+    "detection_date": "2026-01-10",
+    "scheduled_completion": "2026-04-10",
+    "office_org": "Office of Information Technology",
+    "point_of_contact": "Maria Chen, ISSO",
+    "resources_required": "Identity team (24 hrs), cloud admin (8 hrs)",
+    "remediation_plan": "Enable MFA on all privileged accounts via Azure AD Conditional Access policy. Enforce for all accounts with admin roles. Verify enforcement with monthly audit reports.",
+    "milestones": [
+      "2026-02-01: Enable MFA policy in pilot environment",
+      "2026-03-01: Roll out to all admin accounts",
+      "2026-04-01: Final audit and sign-off"
+    ],
+    "status": "In Progress",
+    "comments": "Pilot rollout to 12 admin accounts completed. Full rollout scheduled for March."
+  },
+  {
+    "weakness_name": "Unencrypted Data at Rest in Production S3 Buckets",
+    "weakness_description": "Three production S3 buckets containing PII are not configured with server-side encryption. Data is stored in plaintext, violating SC-28 and FedRAMP encryption requirements.",
+    "security_control": "SC-28",
+    "severity": "High",
+    "source": "Vulnerability Scan",
+    "detection_date": "2026-01-22",
+    "scheduled_completion": "2026-03-31",
+    "office_org": "Cloud Infrastructure Team",
+    "point_of_contact": "Devon Patel, Cloud Architect",
+    "resources_required": "Cloud team (16 hrs), security review (4 hrs)",
+    "remediation_plan": "Enable AES-256 server-side encryption (SSE-S3) on all production S3 buckets. Apply S3 bucket policy to deny unencrypted PutObject requests. Run automated compliance check via AWS Config rule.",
+    "milestones": [
+      "2026-02-15: Enable SSE-S3 on all affected buckets",
+      "2026-03-01: Deny unencrypted uploads via bucket policy",
+      "2026-03-15: Confirm AWS Config rule passing"
+    ],
+    "status": "Open",
+    "comments": "Buckets identified: prod-data-01, prod-data-02, prod-archive. No customer impact expected during remediation."
+  },
+  {
+    "weakness_name": "Security Patch Management Process Not Documented",
+    "weakness_description": "No formal patch management policy exists to define cadence, ownership, and escalation procedures for OS and application patches. Systems are patched ad hoc without documented SLAs.",
+    "security_control": "CM-6",
+    "severity": "Medium",
+    "source": "Audit",
+    "detection_date": "2026-02-05",
+    "scheduled_completion": "2026-05-01",
+    "office_org": "Cybersecurity Policy Office",
+    "point_of_contact": "Taylor Brooks, Policy Analyst",
+    "resources_required": "Policy team (40 hrs), ISSO review (8 hrs)",
+    "remediation_plan": "Draft and approve a Patch Management Standard Operating Procedure (SOP) aligned to NIST SP 800-40. Define critical patch SLA as 30 days, high as 60 days, and medium as 90 days. Integrate with change management workflow.",
+    "milestones": [
+      "2026-03-01: Draft SOP v1.0",
+      "2026-04-01: ISSO and CISO review and approval",
+      "2026-05-01: SOP published and communicated to all system owners"
+    ],
+    "status": "Open",
+    "comments": "Drafting assigned to Taylor Brooks. Template from CISA patch management guidance will be used as starting point."
+  }
+]
