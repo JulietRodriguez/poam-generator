@@ -166,7 +166,10 @@ def fetch_security_hub_findings(region: str) -> list[dict]:
                 "weakness_description": f.get("Description", "No description provided."),
                 "security_control": control_id,
                 "severity": _map_severity(f.get("Severity", {}).get("Label", "MEDIUM")),
-                "source": f.get("ProductName", "AWS Security Hub"),
+                # Always "AWS Security Hub" (a value the validator accepts); the
+                # product that raised the finding (GuardDuty, Inspector, ...) goes
+                # in comments.
+                "source": "AWS Security Hub",
                 "detection_date": _fmt_date(f.get("FirstObservedAt", "")),
                 "scheduled_completion": "",
                 "office_org": f"{account_id} / {resource_arn}",
@@ -180,7 +183,10 @@ def fetch_security_hub_findings(region: str) -> list[dict]:
                     f.get("RecordState", "ACTIVE"),
                     f.get("Workflow", {}).get("Status", "NEW"),
                 ),
-                "comments": f"Finding ID: {f.get('Id', '')}",
+                "comments": (
+                    f"Finding ID: {f.get('Id', '')}; "
+                    f"Product: {f.get('ProductName', 'Security Hub')}"
+                ),
             })
 
     return findings

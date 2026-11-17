@@ -1,11 +1,11 @@
 """POAM finding data model and field definitions."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 VALID_SEVERITIES = {"Critical", "High", "Medium", "Low"}
 VALID_STATUSES = {"Open", "In Progress", "Closed", "Risk Accepted"}
-VALID_SOURCES = {"Audit", "Vulnerability Scan", "Penetration Test"}
+VALID_SOURCES = {"Audit", "Vulnerability Scan", "Penetration Test", "AWS Security Hub"}
 
 REQUIRED_FIELDS = [
     "weakness_name",
@@ -33,7 +33,7 @@ class Finding:
     weakness_description: str
     security_control: str
     severity: Literal["Critical", "High", "Medium", "Low"]
-    source: Literal["Audit", "Vulnerability Scan", "Penetration Test"]
+    source: Literal["Audit", "Vulnerability Scan", "Penetration Test", "AWS Security Hub"]
     detection_date: str
     scheduled_completion: str
     office_org: str
