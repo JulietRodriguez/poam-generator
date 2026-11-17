@@ -1,67 +1,25 @@
-# GitHub Actions Automation
+# GitHub Actions
 
-## Workflow: `poam-scan.yml`
+## `ci.yml`: lint and tests
 
-Automates POAM generation and findings validation on every push, on a weekly schedule, and on demand.
+Runs on every push to `main` and every pull request.
 
-### Triggers
-
-| Trigger | When |
+| Job | What it does |
 |---|---|
-| `push` to `main` | Every time code lands on the main branch |
-| `schedule` | Every Monday at 8:00 AM UTC |
-| `workflow_dispatch` | Manually from the GitHub Actions tab |
+| `lint` | `ruff check .` |
+| `test` | Installs the package with dev extras on Python 3.10, 3.11 and 3.12, downloads NIST's OSCAL 1.1.2 POA&M JSON Schema and XSD (pinned by SHA-256), runs the pytest suite with an 80% coverage floor, then generates OSCAL JSON and XML from `examples/sample_findings.json` with the CLI and validates both against the official schemas. |
 
-### Jobs
+## `poam-report.yml`: demo POAM artifact
 
-#### `poam-generate` — Generate POAM Report
+Runs on pushes to `main` and manually (Actions tab → **POAM Report** → **Run workflow**).
 
-1. Checks out the repository
-2. Sets up Python 3.11
-3. Installs `poam-generator` with `pip install -e .`
-4. Runs `poam demo` to produce `poam_output.csv` from the built-in demo findings
-5. Uploads `poam_output.csv` as a GitHub Actions artifact named **`poam-report`** (retained for 30 days)
+| Job | What it does |
+|---|---|
+| `poam-generate` | Runs `poam demo` (CSV) and builds Excel, OSCAL JSON and OSCAL XML from the sample findings, then uploads them as the `poam-report` artifact (kept 30 days). |
+| `poam-validate` | Runs `poam validate` on `examples/sample_findings.json`. |
 
-Download the latest report from the **Actions** tab → select a run → **Artifacts** section.
+### Why there is no weekly schedule
 
-#### `poam-validate` — Validate Sample Findings
+This workflow used to be called `poam-scan.yml` and also ran every Monday. The demo data never changes, so the weekly run rebuilt the same file each time. GitHub also disables scheduled workflows after 60 days without repository activity, which is why it showed **Disabled**. Running on push and on demand gives the same artifact without a schedule that silently stops.
 
-1. Checks out the repository
-2. Sets up Python 3.11
-3. Installs `poam-generator`
-4. Runs `poam validate -i examples/sample_findings.json`
-5. Exits with a non-zero code (failing the job) if any validation errors are found
-
-This job acts as a CI gate: if someone edits `examples/sample_findings.json` in a way that breaks the schema, the workflow fails visibly before the bad data reaches any downstream process.
-
-### Sample Findings
-
-[`examples/sample_findings.json`](../../examples/sample_findings.json) contains 3 realistic FedRAMP/FISMA findings covering:
-
-- **IA-5** — MFA not enforced on privileged accounts (Critical)
-- **SC-28** — Unencrypted data at rest in S3 (High)
-- **CM-6** — Patch management process not documented (Medium)
-
-Use this file as a template for your own findings. All fields must match the schema validated by `poam validate`.
-
-### Extending the Workflow
-
-To validate your own findings file in CI, change the path in the `poam-validate` job:
-
-```yaml
-- name: Validate sample findings
-  run: poam validate -i path/to/your/findings.json
-```
-
-To sync from AWS Security Hub instead of running the demo:
-
-```yaml
-- name: Sync from Security Hub
-  env:
-    AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-    AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-    AWS_DEFAULT_REGION: us-east-1
-  run: poam sync --source aws-security-hub --output findings.json
-```
-
-Add `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` in your repository's **Settings → Secrets and variables → Actions**.
+To produce a POAM from live AWS Security Hub data on a schedule, run `poam sync` from a scheduled job that has AWS credentials (for example, GitHub OIDC to an IAM role with `securityhub:GetFindings`), then `poam generate`. That needs an AWS account, so it isn't set up here.

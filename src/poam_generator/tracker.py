@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 
 DB_PATH = Path("poam_tracker.db")
+
+
+def _utc_now() -> str:
+    """Current UTC time as 'YYYY-MM-DDTHH:MM:SS' (same format as before)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None).isoformat(timespec="seconds")
 
 
 def _connect(db_path: Path = DB_PATH) -> sqlite3.Connection:
@@ -52,7 +56,7 @@ def save_findings(items: list[dict], db_path: Path = DB_PATH) -> list[dict]:
     Returns a list of change records: {item_id, field, old, new}.
     """
     init_db(db_path)
-    now = datetime.utcnow().isoformat(timespec="seconds")
+    now = _utc_now()
     changes: list[dict] = []
 
     with _connect(db_path) as conn:
@@ -130,7 +134,7 @@ def update_status(
 ) -> bool:
     """Update a finding's status and record in history. Returns True if found."""
     init_db(db_path)
-    now = datetime.utcnow().isoformat(timespec="seconds")
+    now = _utc_now()
 
     with _connect(db_path) as conn:
         row = conn.execute(

@@ -7,7 +7,7 @@ A CLI tool for generating FedRAMP/FISMA **Plan of Action & Milestones (POAM)** d
 ## Features
 
 - **Color-coded terminal table** — findings sorted by severity (Critical → Low) with rich formatting
-- **Multiple output formats** — CSV, Excel (`.xlsx`), OSCAL JSON, and OSCAL XML
+- **Multiple output formats** — CSV, Excel (`.xlsx`), and OSCAL 1.1.2 POA&M in JSON and XML (both validated against NIST's official schemas in CI)
 - **Built-in validation** — checks required fields and valid values before generating output
 - **Demo mode** — 5 realistic sample findings spanning AC-2, IA-5, SI-3, SC-28, and CM-6 controls
 - **Summary report** — per-severity and per-status counts printed after every run
@@ -87,7 +87,8 @@ poam validate -i findings.json
 ```
 
 Valid severities: `Critical`, `High`, `Medium`, `Low`  
-Valid statuses: `Open`, `In Progress`, `Closed`, `Risk Accepted`
+Valid statuses: `Open`, `In Progress`, `Closed`, `Risk Accepted`  
+Valid sources: `Audit`, `Vulnerability Scan`, `Penetration Test`, `AWS Security Hub`
 
 ## Remediation Tracking
 
@@ -99,12 +100,11 @@ poam track -i findings.json
 
 # Show overdue, due-this-week, and all open findings
 poam status
-
-# Update a finding's status with notes
-poam status --update POAM-001 --set-status "In Progress" --notes "Patch applied"
 ```
 
-The tracker stores all status changes with timestamps so you have a full audit trail.
+Each time `poam track` runs, it compares the file with the database and records every status change (old status, new status, timestamp) in a `status_history` table, so you keep an audit trail across runs. Status can also be changed by hand in the dashboard's Remediation Tracker, which records a note with the change.
+
+Note: `poam track` assigns item IDs by position in the file (`V-001`, `V-002`, ...). Keep findings in the same order between runs, or a reordered file will be matched to the wrong history.
 
 ## Web Dashboard
 
@@ -146,7 +146,7 @@ poam generate -i findings.json -o poam.xlsx --format excel
 
 AWS credentials must be configured via `aws configure` or environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`).
 
-The sync command pulls findings filtered to `RecordState=ACTIVE` and `WorkflowStatus=NEW or NOTIFIED`, and maps Security Hub fields to all standard POAM columns automatically.
+The sync command pulls findings filtered to `RecordState=ACTIVE` and `WorkflowStatus=NEW or NOTIFIED` and maps title, description, control ID, severity, account/resource, first-observed date, remediation text, and status. Scheduled completion, point of contact, resources, and milestones aren't in Security Hub, so they're left blank for the ISSO to fill in; `poam validate` and `poam generate` will flag them until they are.
 
 ## Requirements
 
@@ -156,10 +156,20 @@ The sync command pulls findings filtered to `RecordState=ACTIVE` and `WorkflowSt
 - `openpyxl >= 3.1`
 - `boto3 >= 1.26` (for AWS Security Hub integration)
 
+## Testing and CI
+
+```bash
+pip install -e ".[dev]"
+pytest --cov            # 71 tests: models, validation, CSV/Excel, OSCAL JSON/XML, tracker, Security Hub mapping, CLI
+ruff check .
+```
+
+The Security Hub tests use a fake `boto3` client, so no AWS account is needed. GitHub Actions runs lint and the tests on Python 3.10 to 3.12 and validates the OSCAL JSON and XML output against NIST's OSCAL 1.1.2 POA&M JSON Schema and XSD. See [.github/workflows/README.md](.github/workflows/README.md).
+
 ## Contributing
 
 Pull requests welcome. For major changes open an issue first to discuss what you'd like to change.
 
 ## License
 
-MIT — open source, free to use and modify.
+MIT. See [LICENSE](LICENSE).

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  # NIST OSCAL v1.1.2 POA&M schemas (JSON Schema and XSD), pinned by SHA-256.
+  OSCAL_RELEASE: https://github.com/usnistgov/OSCAL/releases/download/v1.1.2
+  JSON_SCHEMA_SHA256: 906725163d767036c6189aec51252109b203214e121fc1acaff494b4d2dfbc04
+  XSD_SHA256: 4de13f26b9c0007504029daf3dd3538250c684139b9fec516d23789110fe05a1
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      - run: ruff check .
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Download OSCAL schemas
+        run: |
+          mkdir -p schemas
+          curl -sSfL "$OSCAL_RELEASE/oscal_poam_schema.json" -o schemas/oscal_poam_schema.json
+          curl -sSfL "$OSCAL_RELEASE/oscal_poam_schema.xsd" -o schemas/oscal_poam_schema.xsd
+          echo "$JSON_SCHEMA_SHA256  schemas/oscal_poam_schema.json" | sha256sum -c -
+          echo "$XSD_SHA256  schemas/oscal_poam_schema.xsd" | sha256sum -c -
+      - name: Test with coverage
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=80
+      - name: Validate CLI OSCAL output against the official schemas
+        run: |
+          poam generate -i examples/sample_findings.json -o /tmp/poam.json --format oscal
+          poam generate -i examples/sample_findings.json -o /tmp/poam.xml --format oscal-xml
+          python tools/validate_oscal.py --schema schemas/oscal_poam_schema.json /tmp/poam.json
+          python -c "from lxml import etree as E; s=E.XMLSchema(E.parse('schemas/oscal_poam_schema.xsd')); d=E.parse('/tmp/poam.xml'); assert s.validate(d), s.error_log; print('OK   /tmp/poam.xml: valid per oscal_poam_schema.xsd')"
