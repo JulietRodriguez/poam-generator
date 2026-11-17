@@ -5,20 +5,23 @@ import sys
 from pathlib import Path
 
 import click
+from rich import box
 from rich.console import Console
 from rich.table import Table
-from rich import box
 
+from .aws_sync import MOCK_FINDINGS, fetch_security_hub_findings
 from .demo_data import DEMO_FINDINGS
 from .generate import write_csv, write_excel
+from .models import SEVERITY_ORDER, Finding
 from .oscal import write_oscal_json, write_oscal_xml
-from .models import Finding, SEVERITY_ORDER
-from .validate import validate_findings
-from .aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
 from .tracker import (
-    init_db, save_findings, update_status, get_all_findings,
-    get_overdue_findings, get_due_this_week, get_status_history, days_remaining,
+    days_remaining,
+    get_all_findings,
+    get_due_this_week,
+    get_overdue_findings,
+    save_findings,
 )
+from .validate import validate_findings
 
 console = Console()
 
@@ -293,8 +296,8 @@ def track(input_file: str, db_path: str):
 def status_cmd(db_path: str):
     """Show a terminal dashboard: overdue items, due this week, and all open findings."""
     from pathlib import Path as _Path
+
     from rich.table import Table as _Table
-    from rich.panel import Panel as _Panel
 
     db = _Path(db_path)
     if not db.exists():

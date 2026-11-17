@@ -21,3 +21,32 @@ poam = "poam_generator.cli:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "jsonschema>=4.18",
+    "lxml>=4.9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # long strings in demo/mock data
+
+[tool.ruff.lint.per-file-ignores]
+# Streamlit entry points: import fallbacks for running as a package or a script
+"src/poam_generator/dashboard.py" = ["F401", "I001", "E402"]
+"streamlit_app.py" = ["I001", "E402"]
+
+[tool.coverage.run]
+source = ["poam_generator"]
+omit = ["*/dashboard.py"]
