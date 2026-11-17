@@ -1,54 +1,55 @@
-name: POAM Scan
+name: POAM Report
 
+# Builds the demo POAM and uploads it as an artifact.
+# Runs on pushes to main and on demand. It used to also run on a weekly
+# schedule, but the demo data never changes, so a weekly run produced the
+# same file every time, and GitHub disables scheduled workflows after 60 days
+# without repository activity (which is why it showed "Disabled").
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: '0 8 * * 1'   # Every Monday at 8am UTC
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   poam-generate:
     name: Generate POAM Report
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Install dependencies
+          python-version: "3.11"
+      - name: Install
         run: pip install -e .
-
-      - name: Run POAM demo
-        run: poam demo
-
+      - name: Build demo POAM (CSV) and sample POAM (Excel, OSCAL JSON/XML)
+        run: |
+          poam demo
+          poam generate -i examples/sample_findings.json -o poam.xlsx --format excel
+          poam generate -i examples/sample_findings.json -o poam.oscal.json --format oscal
+          poam generate -i examples/sample_findings.json -o poam.oscal.xml --format oscal-xml
       - name: Upload POAM report artifact
         uses: actions/upload-artifact@v4
         with:
           name: poam-report
-          path: poam_output.csv
+          path: |
+            poam_output.csv
+            poam.xlsx
+            poam.oscal.json
+            poam.oscal.xml
           retention-days: 30
 
   poam-validate:
     name: Validate Sample Findings
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-
-      - name: Install dependencies
+          python-version: "3.11"
+      - name: Install
         run: pip install -e .
-
       - name: Validate sample findings
         run: poam validate -i examples/sample_findings.json
