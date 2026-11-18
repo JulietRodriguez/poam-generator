@@ -10,6 +10,7 @@ import pandas as pd
 import streamlit as st
 
 try:
+    from . import __version__
     from .aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
     from .generate import write_csv, write_excel
     from .models import Finding
@@ -19,6 +20,7 @@ try:
         get_overdue_findings, get_due_this_week, get_status_history, days_remaining,
     )
 except ImportError:
+    from poam_generator import __version__
     from poam_generator.aws_sync import fetch_security_hub_findings, MOCK_FINDINGS
     from poam_generator.generate import write_csv, write_excel
     from poam_generator.models import Finding
@@ -301,7 +303,7 @@ def main() -> None:
 
     st.sidebar.markdown("---")
     st.sidebar.markdown(
-        "**poam-generator** v0.6.0  \n"
+        f"**poam-generator** v{__version__}  \n"
         "[GitHub](https://github.com/JulietRodriguez/poam-generator)"
     )
 
