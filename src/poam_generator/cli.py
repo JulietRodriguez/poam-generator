@@ -9,6 +9,7 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from . import __version__
 from .aws_sync import MOCK_FINDINGS, fetch_security_hub_findings
 from .demo_data import DEMO_FINDINGS
 from .generate import write_csv, write_excel
@@ -81,7 +82,7 @@ def _build_table(findings: list[Finding]) -> Table:
 
 
 @click.group()
-@click.version_option("0.6.0", prog_name="poam")
+@click.version_option(__version__, prog_name="poam")
 def cli():
     """POAM Generator — create FedRAMP/FISMA Plan of Action & Milestones documents."""
 
